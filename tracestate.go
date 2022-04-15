@@ -88,6 +88,12 @@ func (ts *TraceState) Mutate(key string, value string) error {
 
 	// Modified keys MUST be moved to the beginning (left) of the list
 	ts.Members = append([]*TraceStateMember{&newMember}, ts.Members...)
+
+	// If adding an entry would cause the tracestate list to contain more than
+	// 32 list-members the right-most list-member should be removed from the list
+	if len(ts.Members) > 32 {
+		ts.Members = ts.Members[:32]
+	}
 	return nil
 }
 

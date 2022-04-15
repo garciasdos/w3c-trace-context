@@ -1,6 +1,7 @@
 package tracecontext
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -109,6 +110,31 @@ func TestMutateIllegalValue(t *testing.T) {
 	err := ts.Mutate("key", "\nval")
 	if err == nil {
 		t.Error("Illegal value didn't cause an error")
+	}
+}
+
+func TestMutateMaximumValues(t *testing.T) {
+	ts := TraceState{
+		Members: []*TraceStateMember{},
+	}
+
+	for i := 0; i < 32; i++ {
+		m := TraceStateMember{
+			Key:   fmt.Sprintf("m%d", i),
+			Value: "v",
+		}
+		ts.Members = append(ts.Members, &m)
+	}
+
+	member3Key := "member3"
+	member3Val := "value3"
+	ts.Mutate(member3Key, member3Val)
+
+	if len(ts.Members) != 32 {
+		t.Errorf("Incorrect length %d after mutate", len(ts.Members))
+	}
+	if ts.Members[0].Value != member3Val || ts.Members[0].Key != member3Key {
+		t.Error("Key or value of new member are not correct")
 	}
 }
 
