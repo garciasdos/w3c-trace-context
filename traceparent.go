@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-const FLAG_SAMPLED uint8 = 1
+const FlagSampled uint8 = 1
 
 var (
 	traceIdFormat      = `[a-f0-9]{32}`
@@ -59,13 +59,13 @@ func ParseTraceParent(s string) (*TraceParent, error) {
 }
 
 func (p *TraceParent) IsSampled() bool {
-	return p.Flags&FLAG_SAMPLED != 0
+	return p.Flags&FlagSampled != 0
 }
 func (tp *TraceParent) SetSampled(s bool) {
 	if s {
-		tp.Flags |= FLAG_SAMPLED
+		tp.Flags |= FlagSampled
 	} else {
-		tp.Flags &= ^FLAG_SAMPLED
+		tp.Flags &= ^FlagSampled
 	}
 }
 

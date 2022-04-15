@@ -74,8 +74,8 @@ func TestGenerateTraceContext(t *testing.T) {
 func TestHandleTraceContext(t *testing.T) {
 	// Vendors MUST accept empty tracestate headers
 	headers := http.Header{}
-	headers.Add(TRACEPARENT_HEADER, "00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-00")
-	headers.Add(TRACESTATE_HEADER, "vendor1=val1")
+	headers.Add(TraceParentHeader, "00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-00")
+	headers.Add(TraceStateHeader, "vendor1=val1")
 
 	newHeaders, tc, err := HandleTraceContext(&headers, "vendor2", "val2", true)
 
@@ -93,10 +93,10 @@ func TestHandleTraceContext(t *testing.T) {
 			t.Error("Trace is not sampled")
 		}
 	}
-	if newHeaders.Get(TRACESTATE_HEADER) != "vendor2=val2,vendor1=val1" {
+	if newHeaders.Get(TraceStateHeader) != "vendor2=val2,vendor1=val1" {
 		t.Error("TraceState is not as expected")
 	}
-	if newHeaders.Get(TRACEPARENT_HEADER) == "" {
+	if newHeaders.Get(TraceParentHeader) == "" {
 		t.Error("Missing traceparent header")
 	}
 }
@@ -121,10 +121,10 @@ func TestHandleTraceContextMissingHeaders(t *testing.T) {
 			t.Error("Trace is not sampled")
 		}
 	}
-	if newHeaders.Get(TRACESTATE_HEADER) != "vendor2=val2" {
+	if newHeaders.Get(TraceStateHeader) != "vendor2=val2" {
 		t.Error("TraceState is not as expected")
 	}
-	if newHeaders.Get(TRACEPARENT_HEADER) == "" {
+	if newHeaders.Get(TraceParentHeader) == "" {
 		t.Error("Missing traceparent header")
 	}
 }
@@ -132,8 +132,8 @@ func TestHandleTraceContextMissingHeaders(t *testing.T) {
 func TestHandleTraceContextHigherVersion(t *testing.T) {
 	// Vendors MUST accept empty tracestate headers
 	headers := http.Header{}
-	headers.Add(TRACEPARENT_HEADER, "01-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01")
-	headers.Add(TRACESTATE_HEADER, "vendor1=val1")
+	headers.Add(TraceParentHeader, "01-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01")
+	headers.Add(TraceStateHeader, "vendor1=val1")
 
 	newHeaders, tc, err := HandleTraceContext(&headers, "", "", true)
 
@@ -151,10 +151,10 @@ func TestHandleTraceContextHigherVersion(t *testing.T) {
 			t.Error("Trace is not sampled")
 		}
 	}
-	if newHeaders.Get(TRACESTATE_HEADER) != "vendor1=val1" {
+	if newHeaders.Get(TraceStateHeader) != "vendor1=val1" {
 		t.Error("TraceState is not as expected")
 	}
-	if newHeaders.Get(TRACEPARENT_HEADER) == "" {
+	if newHeaders.Get(TraceParentHeader) == "" {
 		t.Error("Missing traceparent header")
 	}
 }

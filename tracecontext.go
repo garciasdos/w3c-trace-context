@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	TRACESTATE_HEADER  = "tracestate"
-	TRACEPARENT_HEADER = "traceparent"
+	TraceStateHeader  = "tracestate"
+	TraceParentHeader = "traceparent"
 )
 
 type TraceContext struct {
@@ -20,7 +20,7 @@ type TraceContext struct {
 func ParseTraceContext(headers http.Header) (*TraceContext, error) {
 	traceContext := TraceContext{}
 
-	traceparentHeader := headers.Get(TRACEPARENT_HEADER)
+	traceparentHeader := headers.Get(TraceParentHeader)
 	traceParent, err := ParseTraceParent(traceparentHeader)
 	// If the vendor failed to parse traceparent, it MUST NOT attempt to parse tracestate
 	if err != nil {
@@ -28,7 +28,7 @@ func ParseTraceContext(headers http.Header) (*TraceContext, error) {
 	}
 	traceContext.TraceParent = traceParent
 
-	tracestateHeader := headers.Get(TRACESTATE_HEADER)
+	tracestateHeader := headers.Get(TraceStateHeader)
 	traceState, err := ParseTraceState(tracestateHeader)
 	//failure to parse tracestate MUST NOT affect the parsing of traceparent
 	if err == nil {
@@ -49,12 +49,12 @@ func HandleTraceContext(headers *http.Header, vendorKey string, vendorValue stri
 	newHeaders := headers.Clone()
 	var newTraceContext *TraceContext
 
-	if headers.Get(TRACEPARENT_HEADER) != "" {
+	if headers.Get(TraceParentHeader) != "" {
 		tc, err := ParseTraceContext(*headers)
 		if err != nil {
 			// If parsing fails, the vendor creates a new traceparent header and
 			// deletes the tracestate
-			newHeaders.Del(TRACESTATE_HEADER)
+			newHeaders.Del(TraceStateHeader)
 			tc, err := GenerateTraceContext(vendorKey, vendorValue)
 			if err != nil {
 				return nil, nil, err
@@ -69,7 +69,7 @@ func HandleTraceContext(headers *http.Header, vendorKey string, vendorValue stri
 	} else {
 		// If a tracestate header is received without an accompanying
 		// traceparent header, it is invalid and MUST be discarded.
-		newHeaders.Del(TRACESTATE_HEADER)
+		newHeaders.Del(TraceStateHeader)
 		tc, err := GenerateTraceContext(vendorKey, vendorValue)
 		if err != nil {
 			return nil, nil, err
@@ -128,6 +128,6 @@ func GenerateTraceContext(vendorKey string, vendorValue string) (*TraceContext, 
 // WriteHeaders writes the traceparent and tracestate headers to the provided
 // headers object. Any existing headers of the same name are overwritten.
 func (tc *TraceContext) WriteHeaders(headers *http.Header) {
-	headers.Set(TRACEPARENT_HEADER, tc.TraceParent.String())
-	headers.Set(TRACESTATE_HEADER, tc.TraceState.String())
+	headers.Set(TraceParentHeader, tc.TraceParent.String())
+	headers.Set(TraceStateHeader, tc.TraceState.String())
 }
