@@ -158,3 +158,29 @@ func TestHandleTraceContextHigherVersion(t *testing.T) {
 		t.Error("Missing traceparent header")
 	}
 }
+
+func TestWriteHeadersEmpty(t *testing.T) {
+	headers := http.Header{}
+	tc := TraceContext{}
+	tc.WriteHeaders(&headers)
+
+	if headers.Get(TraceStateHeader) != "" {
+		t.Error("tracestate header written")
+	}
+	if headers.Get(TraceParentHeader) != "" {
+		t.Error("traceparent header written")
+	}
+}
+
+func TestWriteHeadersNoEmptyTraceState(t *testing.T) {
+	headers := http.Header{}
+	ts := NewEmptyTraceState()
+	tc := TraceContext{
+		TraceState: ts,
+	}
+	tc.WriteHeaders(&headers)
+
+	if headers.Get(TraceStateHeader) != "" {
+		t.Error("tracestate header written")
+	}
+}

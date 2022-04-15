@@ -130,6 +130,12 @@ func GenerateTraceContext(vendorKey string, vendorValue string) (*TraceContext, 
 // WriteHeaders writes the traceparent and tracestate headers to the provided
 // headers object. Any existing headers of the same name are overwritten.
 func (tc *TraceContext) WriteHeaders(headers *http.Header) {
-	headers.Set(TraceParentHeader, tc.TraceParent.String())
-	headers.Set(TraceStateHeader, tc.TraceState.String())
+	if tc.TraceParent != nil {
+		headers.Set(TraceParentHeader, tc.TraceParent.String())
+	}
+
+	// Vendors MUST accept empty tracestate headers but SHOULD avoid sending them
+	if tc.TraceState != nil && len(tc.TraceState.Members) > 0 {
+		headers.Set(TraceStateHeader, tc.TraceState.String())
+	}
 }
