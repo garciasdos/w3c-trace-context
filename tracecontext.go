@@ -9,6 +9,8 @@ const (
 	TraceParentHeader = "traceparent"
 )
 
+// TraceContext combines the information of traceparent and tracestate.
+// It can be parsed from HTTP headers and written to HTTP headers.
 type TraceContext struct {
 	TraceParent *TraceParent
 	TraceState  *TraceState

@@ -17,15 +17,19 @@ var (
 	memberPattern = regexp.MustCompile(`^` + memberFormat + `$`)
 )
 
+// TraceState represents the information contained in the tracestate header
 type TraceState struct {
 	Members []*TraceStateMember
 }
 
+// TraceStateMember represents a single entry in the TraceState list
 type TraceStateMember struct {
 	Key   string
 	Value string
 }
 
+// ParseTraceState parses the provided string and - on success - returns a
+// TraceState object
 func ParseTraceState(s string) (*TraceState, error) {
 	candidates := strings.Split(s, ",")
 
@@ -102,10 +106,15 @@ func (ts *TraceState) String() string {
 
 	return sb.String()
 }
+
+// NewEmptyTraceState generates an empty TraceState object
 func NewEmptyTraceState() *TraceState {
 	ts := TraceState{}
 	return &ts
 }
+
+// NewTraceState generates a TraceState object and adds an entry based on
+// key and value
 func NewTraceState(key string, value string) (*TraceState, error) {
 	ts := TraceState{}
 	err := ts.Mutate(key, value)

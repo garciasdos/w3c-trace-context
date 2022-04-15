@@ -18,6 +18,7 @@ var (
 	traceParentPattern = regexp.MustCompile(`^[a-f0-9]{2}-` + traceIdFormat + `-` + parentIdFormat + `-[a-f0-9]{2}$`)
 )
 
+// TraceParent represents the information contained in the traceparent header
 type TraceParent struct {
 	Version  uint8
 	TraceId  string
@@ -25,6 +26,8 @@ type TraceParent struct {
 	Flags    byte
 }
 
+// ParseTraceParent parses the input string and - on success - returns a
+// TraceParent object
 func ParseTraceParent(s string) (*TraceParent, error) {
 	parent := TraceParent{}
 
@@ -58,9 +61,12 @@ func ParseTraceParent(s string) (*TraceParent, error) {
 	return &parent, nil
 }
 
+// IsSampled returns true if the sampled flag in the TraceParent is set
 func (p *TraceParent) IsSampled() bool {
 	return p.Flags&FlagSampled != 0
 }
+
+// SetSampled updates the sampled flag with the given value
 func (tp *TraceParent) SetSampled(s bool) {
 	if s {
 		tp.Flags |= FlagSampled
@@ -69,6 +75,8 @@ func (tp *TraceParent) SetSampled(s bool) {
 	}
 }
 
+// NewTraceParent generates a new TraceParent based on the provided values.
+// If the values don't match the correct format, an error is returned
 func NewTraceParent(traceId string, parentId string) (*TraceParent, error) {
 	if !traceIdPattern.MatchString(traceId) {
 		return nil, errors.New("traceId doesn't match the specified pattern")
@@ -87,6 +95,7 @@ func NewTraceParent(traceId string, parentId string) (*TraceParent, error) {
 	return &tp, nil
 }
 
+// String returns the string representation of the TraceParent
 func (tp *TraceParent) String() string {
 	return fmt.Sprintf("%02x-%s-%s-%02x", tp.Version, tp.TraceId, tp.ParentId, tp.Flags)
 }
