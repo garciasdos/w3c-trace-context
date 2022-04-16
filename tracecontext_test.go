@@ -159,6 +159,30 @@ func TestHandleTraceContextHigherVersion(t *testing.T) {
 	}
 }
 
+func TestHandleTraceContextParsingError(t *testing.T) {
+	// Vendors MUST accept empty tracestate headers
+	headers := http.Header{}
+	headers.Add(TraceParentHeader, "01-illegal")
+	headers.Add(TraceStateHeader, "vendor1=val1")
+
+	newHeaders, tc, err := HandleTraceContext(&headers, "", nil, true)
+
+	if err != nil {
+		t.Error("Failed to handle trace context")
+	}
+	if tc != nil {
+		if !tc.TraceParent.IsSampled() {
+			t.Error("Trace is not sampled")
+		}
+	}
+	if newHeaders.Get(TraceStateHeader) != "" {
+		t.Error("TraceState header returned")
+	}
+	if newHeaders.Get(TraceParentHeader) == "" {
+		t.Error("Missing traceparent header")
+	}
+}
+
 func TestWriteHeadersEmpty(t *testing.T) {
 	headers := http.Header{}
 	tc := TraceContext{}
