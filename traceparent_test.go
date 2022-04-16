@@ -36,6 +36,14 @@ func TestParseTraceParentNonZeroVersion(t *testing.T) {
 	}
 }
 
+func TestParseTraceParentFFVersion(t *testing.T) {
+	_, err := ParseTraceParent("ff-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01")
+
+	if err == nil {
+		t.Error("Incorrectly parsed ff version")
+	}
+}
+
 func TestTraceParentIsSampled(t *testing.T) {
 	sampled, _ := ParseTraceParent("00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01")
 	notSampled, _ := ParseTraceParent("00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-00")

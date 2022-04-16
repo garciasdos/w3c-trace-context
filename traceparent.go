@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"strconv"
 )
 
 const FlagSampled uint8 = 1
@@ -35,9 +34,14 @@ func ParseTraceParent(s string) (*TraceParent, error) {
 		return nil, errors.New("traceparent doesn't match the specified pattern")
 	}
 
-	parsedVersion, err := strconv.ParseInt(s[0:2], 16, 8)
+	versionByte, err := hex.DecodeString(s[0:2])
+	parsedVersion := uint8(versionByte[0])
 	if err != nil {
 		return nil, errors.New("cannot parse version")
+	}
+	// Version ff is invalid
+	if parsedVersion == 255 {
+		return nil, errors.New("version 'ff' is invalid")
 	}
 
 	parent.Version = uint8(parsedVersion)
@@ -49,7 +53,7 @@ func ParseTraceParent(s string) (*TraceParent, error) {
 
 	parent.ParentId = s[36:52]
 	if parent.ParentId == "0000000000000000" {
-		return nil, errors.New("all zero trace id is not allowed")
+		return nil, errors.New("all zero parent id is not allowed")
 	}
 
 	parsedFlags, err := hex.DecodeString(s[53:55])
