@@ -29,14 +29,13 @@ func TestMutate(t *testing.T) {
 		},
 	}
 
-	member3Key := "member3"
-	member3Val := "value3"
-	ts.Mutate(member3Key, member3Val)
+	member3 := TraceStateMember{Key: "member3", Value: "value3"}
+	ts.Mutate(member3)
 
 	if len(ts.Members) != 3 {
 		t.Errorf("Incorrect length %d after mutate", len(ts.Members))
 	}
-	if ts.Members[0].Value != member3Val || ts.Members[0].Key != member3Key {
+	if ts.Members[0].Value != member3.Value || ts.Members[0].Key != member3.Key {
 		t.Error("Key or value of new member are not correct")
 	}
 }
@@ -57,14 +56,13 @@ func TestMutateReplace(t *testing.T) {
 		},
 	}
 
-	member2Key := "member2"
-	member2NewVal := "newVal"
-	ts.Mutate(member2Key, member2NewVal)
+	member2new := TraceStateMember{Key: "member2", Value: "newVal"}
+	ts.Mutate(member2new)
 
 	if len(ts.Members) != 2 {
 		t.Errorf("Incorrect length %d after mutate", len(ts.Members))
 	}
-	if ts.Members[0].Value != member2NewVal || ts.Members[0].Key != member2Key {
+	if ts.Members[0].Value != member2new.Value || ts.Members[0].Key != member2new.Key {
 		t.Error("Key or value of new member are not correct")
 	}
 }
@@ -85,7 +83,7 @@ func TestMutateIllegalKey(t *testing.T) {
 		},
 	}
 
-	err := ts.Mutate("IllegalKey", "val")
+	err := ts.Mutate(TraceStateMember{Key: "IllegalKey", Value: "val"})
 	if err == nil {
 		t.Error("Illegal key didn't cause an error")
 	}
@@ -107,7 +105,7 @@ func TestMutateIllegalValue(t *testing.T) {
 		},
 	}
 
-	err := ts.Mutate("key", "\nval")
+	err := ts.Mutate(TraceStateMember{Key: "key", Value: "\nval"})
 	if err == nil {
 		t.Error("Illegal value didn't cause an error")
 	}
@@ -126,14 +124,13 @@ func TestMutateMaximumValues(t *testing.T) {
 		ts.Members = append(ts.Members, &m)
 	}
 
-	member3Key := "member3"
-	member3Val := "value3"
-	ts.Mutate(member3Key, member3Val)
+	member3 := TraceStateMember{Key: "member3", Value: "value3"}
+	ts.Mutate(member3)
 
 	if len(ts.Members) != 32 {
 		t.Errorf("Incorrect length %d after mutate", len(ts.Members))
 	}
-	if ts.Members[0].Value != member3Val || ts.Members[0].Key != member3Key {
+	if ts.Members[0].Value != member3.Value || ts.Members[0].Key != member3.Key {
 		t.Error("Key or value of new member are not correct")
 	}
 }

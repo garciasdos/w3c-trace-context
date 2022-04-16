@@ -50,7 +50,7 @@ func TestParseTraceContextEmptyTracestate(t *testing.T) {
 func TestGenerateTraceContext(t *testing.T) {
 	vendorName := "vendor"
 	vendorValue := "value"
-	tc, err := GenerateTraceContext("vendor", "value")
+	tc, err := GenerateTraceContext(&TraceStateMember{Key: vendorName, Value: vendorValue})
 
 	if err != nil {
 		t.Error("Failed to generate trace context")
@@ -77,7 +77,7 @@ func TestHandleTraceContext(t *testing.T) {
 	headers.Add(TraceParentHeader, "00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-00")
 	headers.Add(TraceStateHeader, "vendor1=val1")
 
-	newHeaders, tc, err := HandleTraceContext(&headers, "vendor2", "val2", true)
+	newHeaders, tc, err := HandleTraceContext(&headers, &TraceStateMember{Key: "vendor2", Value: "val2"}, true)
 
 	if err != nil {
 		t.Error("Failed to handle trace context")
@@ -105,7 +105,7 @@ func TestHandleTraceContextMissingHeaders(t *testing.T) {
 	// Vendors MUST accept empty tracestate headers
 	headers := http.Header{}
 
-	newHeaders, tc, err := HandleTraceContext(&headers, "vendor2", "val2", true)
+	newHeaders, tc, err := HandleTraceContext(&headers, &TraceStateMember{Key: "vendor2", Value: "val2"}, true)
 
 	if err != nil {
 		t.Error("Failed to handle trace context")
@@ -135,7 +135,7 @@ func TestHandleTraceContextHigherVersion(t *testing.T) {
 	headers.Add(TraceParentHeader, "01-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01")
 	headers.Add(TraceStateHeader, "vendor1=val1")
 
-	newHeaders, tc, err := HandleTraceContext(&headers, "", "", true)
+	newHeaders, tc, err := HandleTraceContext(&headers, nil, true)
 
 	if err != nil {
 		t.Error("Failed to handle trace context")

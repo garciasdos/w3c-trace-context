@@ -46,8 +46,8 @@ func ParseTraceContext(headers http.Header) (*TraceContext, error) {
 // If no trace context information is present, it will be added.
 // The final TraceContext based on which the headers were generated is returned
 // as well.
-// if vendorKey is not empty, the tracestate will be modified accordingly
-func HandleTraceContext(headers *http.Header, vendorKey string, vendorValue string, sampled bool) (*http.Header, *TraceContext, error) {
+// if member is not nil, the tracestate will be modified accordingly
+func HandleTraceContext(headers *http.Header, member *TraceStateMember, sampled bool) (*http.Header, *TraceContext, error) {
 	newHeaders := headers.Clone()
 	var newTraceContext *TraceContext
 
@@ -57,14 +57,14 @@ func HandleTraceContext(headers *http.Header, vendorKey string, vendorValue stri
 			// If parsing fails, the vendor creates a new traceparent header and
 			// deletes the tracestate
 			newHeaders.Del(TraceStateHeader)
-			tc, err := GenerateTraceContext(vendorKey, vendorValue)
+			tc, err := GenerateTraceContext(member)
 			if err != nil {
 				return nil, nil, err
 			}
 			newTraceContext = tc
 		} else {
-			if vendorKey != "" {
-				tc.TraceState.Mutate(vendorKey, vendorValue)
+			if member != nil {
+				tc.TraceState.Mutate(*member)
 			}
 			newTraceContext = tc
 		}
@@ -72,7 +72,7 @@ func HandleTraceContext(headers *http.Header, vendorKey string, vendorValue stri
 		// If a tracestate header is received without an accompanying
 		// traceparent header, it is invalid and MUST be discarded.
 		newHeaders.Del(TraceStateHeader)
-		tc, err := GenerateTraceContext(vendorKey, vendorValue)
+		tc, err := GenerateTraceContext(member)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -86,12 +86,12 @@ func HandleTraceContext(headers *http.Header, vendorKey string, vendorValue stri
 
 // GenerateTraceContext generates a new TraceContext object with a random
 // trace id and parent id.
-// If the vendorKey is left empty, no tracestate will be set
-// If the vendorValue is left empty, the generated
+// If the member is nil, no tracestate will be set
+// If the member value is left empty, the generated
 // parent id will be used as the vendor value.
 // Errors will be returned if the random value generation fails or if the
 // provided key or value don't match the allowed format.
-func GenerateTraceContext(vendorKey string, vendorValue string) (*TraceContext, error) {
+func GenerateTraceContext(member *TraceStateMember) (*TraceContext, error) {
 	traceId, err := randomHex(16)
 	if err != nil {
 		return nil, err
@@ -106,14 +106,14 @@ func GenerateTraceContext(vendorKey string, vendorValue string) (*TraceContext, 
 		return nil, err
 	}
 
-	if vendorValue == "" {
-		vendorValue = parentId
-	}
 	var ts *TraceState
-	if vendorKey == "" {
+	if member == nil {
 		ts = NewEmptyTraceState()
 	} else {
-		ts, err = NewTraceState(vendorKey, vendorValue)
+		if member.Value == "" {
+			member.Value = parentId
+		}
+		ts, err = NewTraceState(*member)
 		if err != nil {
 			return nil, err
 		}

@@ -64,16 +64,15 @@ func parseMember(s string) (*TraceStateMember, error) {
 
 // Mutate will add a new member to beginning of the list and - if the key is
 // already present - remove the old entry
-func (ts *TraceState) Mutate(key string, value string) error {
-	if !keyPattern.MatchString(key) {
+func (ts *TraceState) Mutate(member TraceStateMember) error {
+	if !keyPattern.MatchString(member.Key) {
 		return errors.New("key doesn't match allowed key pattern")
 	}
-	if !valuePattern.MatchString(value) {
+	if !valuePattern.MatchString(member.Value) {
 		return errors.New("value doesn't match allowed value pattern")
 	}
-	newMember := TraceStateMember{Key: key, Value: value}
 	idx := slices.IndexFunc(ts.Members,
-		func(m *TraceStateMember) bool { return m.Key == key })
+		func(m *TraceStateMember) bool { return m.Key == member.Key })
 
 	// If the member already exists in the list, the old entry needs to be
 	// removed first
@@ -87,7 +86,7 @@ func (ts *TraceState) Mutate(key string, value string) error {
 	}
 
 	// Modified keys MUST be moved to the beginning (left) of the list
-	ts.Members = append([]*TraceStateMember{&newMember}, ts.Members...)
+	ts.Members = append([]*TraceStateMember{&member}, ts.Members...)
 
 	// If adding an entry would cause the tracestate list to contain more than
 	// 32 list-members the right-most list-member should be removed from the list
@@ -121,9 +120,9 @@ func NewEmptyTraceState() *TraceState {
 
 // NewTraceState generates a TraceState object and adds an entry based on
 // key and value
-func NewTraceState(key string, value string) (*TraceState, error) {
+func NewTraceState(member TraceStateMember) (*TraceState, error) {
 	ts := TraceState{}
-	err := ts.Mutate(key, value)
+	err := ts.Mutate(member)
 	if err != nil {
 		return nil, err
 	}
