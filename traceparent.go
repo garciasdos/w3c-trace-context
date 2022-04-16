@@ -19,10 +19,10 @@ var (
 
 // TraceParent represents the information contained in the traceparent header
 type TraceParent struct {
-	Version  uint8
-	TraceId  string
-	ParentId string
-	Flags    byte
+	version  uint8
+	traceId  string
+	parentId string
+	flags    byte
 }
 
 // ParseTraceParent parses the input string and - on success - returns a
@@ -44,15 +44,15 @@ func ParseTraceParent(s string) (*TraceParent, error) {
 		return nil, errors.New("version 'ff' is invalid")
 	}
 
-	parent.Version = uint8(parsedVersion)
+	parent.version = uint8(parsedVersion)
 
-	parent.TraceId = s[3:35]
-	if parent.TraceId == "00000000000000000000000000000000" {
+	parent.traceId = s[3:35]
+	if parent.traceId == "00000000000000000000000000000000" {
 		return nil, errors.New("all zero trace id is not allowed")
 	}
 
-	parent.ParentId = s[36:52]
-	if parent.ParentId == "0000000000000000" {
+	parent.parentId = s[36:52]
+	if parent.parentId == "0000000000000000" {
 		return nil, errors.New("all zero parent id is not allowed")
 	}
 
@@ -60,46 +60,58 @@ func ParseTraceParent(s string) (*TraceParent, error) {
 	if err != nil {
 		return nil, errors.New("cannot parse flags")
 	}
-	parent.Flags = parsedFlags[0]
+	parent.flags = parsedFlags[0]
 
 	return &parent, nil
 }
 
 // IsSampled returns true if the sampled flag in the TraceParent is set
 func (p *TraceParent) IsSampled() bool {
-	return p.Flags&FlagSampled != 0
+	return p.flags&FlagSampled != 0
 }
 
 // SetSampled updates the sampled flag with the given value
 func (tp *TraceParent) SetSampled(s bool) {
 	if s {
-		tp.Flags |= FlagSampled
+		tp.flags |= FlagSampled
 	} else {
-		tp.Flags &= ^FlagSampled
+		tp.flags &= ^FlagSampled
 	}
 }
 
 // NewTraceParent generates a new TraceParent based on the provided values.
 // If the values don't match the correct format, an error is returned
 func NewTraceParent(traceId string, parentId string) (*TraceParent, error) {
-	if !traceIdPattern.MatchString(traceId) {
-		return nil, errors.New("traceId doesn't match the specified pattern")
+	tp := TraceParent{}
+	err := tp.SetTraceId(traceId)
+	if err != nil {
+		return nil, err
 	}
-	if !parentIdPattern.MatchString(parentId) {
-		return nil, errors.New("parentId doesn't match the specified pattern")
-	}
-
-	tp := TraceParent{
-		Version:  0,
-		TraceId:  traceId,
-		ParentId: parentId,
-		Flags:    0,
+	err = tp.SetParentId(parentId)
+	if err != nil {
+		return nil, err
 	}
 
 	return &tp, nil
 }
 
+func (tp *TraceParent) SetParentId(parentId string) error {
+	if !parentIdPattern.MatchString(parentId) {
+		return errors.New("parentId doesn't match the specified pattern")
+	}
+	tp.parentId = parentId
+	return nil
+}
+
+func (tp *TraceParent) SetTraceId(traceId string) error {
+	if !traceIdPattern.MatchString(traceId) {
+		return errors.New("traceId doesn't match the specified pattern")
+	}
+	tp.traceId = traceId
+	return nil
+}
+
 // String returns the string representation of the TraceParent
 func (tp *TraceParent) String() string {
-	return fmt.Sprintf("%02x-%s-%s-%02x", tp.Version, tp.TraceId, tp.ParentId, tp.Flags)
+	return fmt.Sprintf("%02x-%s-%s-%02x", tp.version, tp.traceId, tp.parentId, tp.flags)
 }

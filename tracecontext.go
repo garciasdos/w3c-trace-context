@@ -1,6 +1,7 @@
 package tracecontext
 
 import (
+	"errors"
 	"net/http"
 )
 
@@ -44,10 +45,14 @@ func ParseTraceContext(headers http.Header) (*TraceContext, error) {
 // input headers. A copy of the headers is returned with only traceparent and
 // tracestate modified.
 // If no trace context information is present, it will be added.
-// The final TraceContext based on which the headers were generated is returned
-// as well.
-// if member is not nil, the tracestate will be modified accordingly
-func HandleTraceContext(headers *http.Header, member *TraceStateMember, sampled bool) (*http.Header, *TraceContext, error) {
+// The TraceState will be mutated:
+//   * parentId will be set to the provided value or generated randomly if left
+//     empty
+//   * The sampled flag will be set to the provided value
+//   * member will be added to the tracestate if it is not nil
+// The final mutated TraceContext based on which the headers were generated is
+// returned as well.
+func HandleTraceContext(headers *http.Header, parentId string, member *TraceStateMember, sampled bool) (*http.Header, *TraceContext, error) {
 	newHeaders := headers.Clone()
 	var newTraceContext *TraceContext
 
@@ -57,54 +62,55 @@ func HandleTraceContext(headers *http.Header, member *TraceStateMember, sampled 
 			// If parsing fails, the vendor creates a new traceparent header and
 			// deletes the tracestate
 			newHeaders.Del(TraceStateHeader)
-			tc, err := GenerateTraceContext(member)
+			tc, err := GenerateTraceContext(parentId, member, sampled)
 			if err != nil {
 				return nil, nil, err
 			}
 			newTraceContext = tc
 		} else {
-			if member != nil {
-				tc.TraceState.Mutate(*member)
-			}
 			newTraceContext = tc
+			newTraceContext.Mutate(parentId, sampled, member)
 		}
 	} else {
 		// If a tracestate header is received without an accompanying
 		// traceparent header, it is invalid and MUST be discarded.
 		newHeaders.Del(TraceStateHeader)
-		tc, err := GenerateTraceContext(member)
+		tc, err := GenerateTraceContext(parentId, member, sampled)
 		if err != nil {
 			return nil, nil, err
 		}
 		newTraceContext = tc
 	}
 
-	newTraceContext.TraceParent.SetSampled(sampled)
 	newTraceContext.WriteHeaders(&newHeaders)
 	return &newHeaders, newTraceContext, nil
 }
 
 // GenerateTraceContext generates a new TraceContext object with a random
-// trace id and parent id.
+// trace id.
+// The parentId will also be randomly generated if an empty one is provided.
 // If the member is nil, no tracestate will be set
 // If the member value is left empty, the generated
 // parent id will be used as the vendor value.
 // Errors will be returned if the random value generation fails or if the
 // provided key or value don't match the allowed format.
-func GenerateTraceContext(member *TraceStateMember) (*TraceContext, error) {
+func GenerateTraceContext(parentId string, member *TraceStateMember, sampled bool) (*TraceContext, error) {
 	traceId, err := randomHex(16)
 	if err != nil {
 		return nil, err
 	}
-	parentId, err := randomHex(8)
-	if err != nil {
-		return nil, err
+	if parentId == "" {
+		parentId, err = randomHex(8)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	tp, err := NewTraceParent(traceId, parentId)
 	if err != nil {
 		return nil, err
 	}
+	tp.SetSampled(sampled)
 
 	var ts *TraceState
 	if member == nil {
@@ -125,6 +131,64 @@ func GenerateTraceContext(member *TraceStateMember) (*TraceContext, error) {
 	}
 
 	return &tc, nil
+}
+
+// NewTraceContext returns a new TraceContext object initialized with the
+// provided traceId and parentId values.
+// An error is returned if the provided values don't match the format
+// specification.
+func NewTraceContext(traceId string, parentId string) (*TraceContext, error) {
+	tp, err := NewTraceParent(traceId, parentId)
+	if err != nil {
+		return nil, err
+	}
+
+	tc := TraceContext{
+		TraceParent: tp,
+		TraceState:  NewEmptyTraceState(),
+	}
+
+	return &tc, nil
+}
+
+// Mutate mutates the TraceContext object:
+//   * The parentId is updated with the provided value. If an empty value is
+//     provided, the parentId is randomly generated instead
+//   * The sampled flag is updated based on the sampled value
+//   * member is added to the tracestate list as long as member is not nil.
+//     If member.Value is nil, the parentId is used as the value
+func (tc *TraceContext) Mutate(parentId string, sampled bool, member *TraceStateMember) error {
+	var err error
+	if tc.TraceParent == nil {
+		return errors.New("TraceContext without TraceParent cannot be mutated")
+	}
+	if parentId == "" {
+
+		parentId, err = randomHex(8)
+		if err != nil {
+			return err
+		}
+	}
+	err = tc.TraceParent.SetParentId(parentId)
+	if err != nil {
+		return err
+	}
+	tc.TraceParent.SetSampled(sampled)
+
+	if member != nil {
+		if member.Value == "" {
+			member.Value = parentId
+		}
+		if tc.TraceState == nil {
+			tc.TraceState, err = NewTraceState(*member)
+			if err != nil {
+				return err
+			}
+		} else {
+			tc.TraceState.Mutate(*member)
+		}
+	}
+	return nil
 }
 
 // WriteHeaders writes the traceparent and tracestate headers to the provided
