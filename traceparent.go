@@ -95,6 +95,18 @@ func NewTraceParent(traceId string, parentId string) (*TraceParent, error) {
 	return &tp, nil
 }
 
+func (tp *TraceParent) ParentId() string {
+	return tp.parentId
+}
+
+func (tp *TraceParent) TraceId() string {
+	return tp.traceId
+}
+
+func (tp *TraceParent) Version() uint8 {
+	return tp.version
+}
+
 func (tp *TraceParent) SetParentId(parentId string) error {
 	if !parentIdPattern.MatchString(parentId) {
 		return errors.New("parentId doesn't match the specified pattern")
