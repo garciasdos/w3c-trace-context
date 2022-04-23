@@ -112,6 +112,17 @@ func (ts *TraceState) String() string {
 	return sb.String()
 }
 
+// MemberValue returns the string value of the member with the provided key.
+// If the member doesn't exist, an empty string is returned.
+func (ts *TraceState) MemberValue(memberKey string) string {
+	for _, m := range ts.Members {
+		if m.Key == memberKey {
+			return m.Value
+		}
+	}
+	return ""
+}
+
 // NewEmptyTraceState generates an empty TraceState object
 func NewEmptyTraceState() *TraceState {
 	ts := TraceState{}

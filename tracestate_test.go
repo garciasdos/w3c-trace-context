@@ -156,3 +156,45 @@ func TestString(t *testing.T) {
 		t.Errorf("Wrong string value returned: '%s'", s)
 	}
 }
+
+func TestMemberValue(t *testing.T) {
+	member1 := TraceStateMember{
+		Key:   "member1",
+		Value: "value1",
+	}
+	member2 := TraceStateMember{
+		Key:   "member2",
+		Value: "value2",
+	}
+	ts := TraceState{
+		Members: []*TraceStateMember{
+			&member1,
+			&member2,
+		},
+	}
+
+	if ts.MemberValue("member2") != "value2" {
+		t.Error("value not retrieved correctly")
+	}
+}
+
+func TestMemberValueNotFound(t *testing.T) {
+	member1 := TraceStateMember{
+		Key:   "member1",
+		Value: "value1",
+	}
+	member2 := TraceStateMember{
+		Key:   "member2",
+		Value: "value2",
+	}
+	ts := TraceState{
+		Members: []*TraceStateMember{
+			&member1,
+			&member2,
+		},
+	}
+
+	if ts.MemberValue("member3") != "" {
+		t.Error("no empty value returned")
+	}
+}
