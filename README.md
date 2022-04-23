@@ -4,7 +4,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/dschanoeh/w3c-trace-context.svg)](https://pkg.go.dev/github.com/dschanoeh/w3c-trace-context)
 
 This Go library implements the
-[W3C Trace Context Specification](https://w3c.github.io/trace-context/).
+[W3C Trace Context Specification](https://www.w3.org/TR/trace-context/).
 It provides methods to parse existing Trace Context headers, to generate new
 headers or to mutate existing headers in accordance with the specification.
 
