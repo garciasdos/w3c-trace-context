@@ -18,7 +18,17 @@ import . "github.com/dschanoeh/w3c-trace-context"
 func main() {
     // Start with empty headers or pass existing input headers
     headers := http.Header{}
-	newHeaders, tc, err := HandleTraceContext(&headers, "vendor2", "val2", false)
+
+    // Define a parent ID for the operation or leave empty for a randomly
+    // generated one
+    parentId := "myOperation" 
+    // Optionally add a new tracestate member
+    member := TraceStateMember {
+        Key: "myKey",
+        Value: "myValue",
+    }
+    newHeaders, tc, err := HandleTraceContext(&headers, parentId, &member, false)
+
     // pass newHeaders to next systems
 }
 ```
