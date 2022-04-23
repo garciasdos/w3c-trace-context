@@ -9,7 +9,7 @@ import (
 
 const (
 	FlagSampled                         uint8 = 1
-	HighestSupportedTraceContextVersion       = 0
+	HighestSupportedTraceContextVersion uint8 = 0
 )
 
 var (
