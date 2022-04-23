@@ -42,7 +42,7 @@ func TestParseTraceParentVersionOne(t *testing.T) {
 	if err != nil {
 		t.Error("Could not parse valid future version:", err)
 	}
-	if tp.version != 1 {
+	if tp.version != HighestSupportedTraceContextVersion {
 		t.Error("version not parsed correctly")
 	}
 	if tp.traceId != "0af7651916cd43dd8448eb211c80319c" {
