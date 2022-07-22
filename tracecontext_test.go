@@ -50,7 +50,7 @@ func TestParseTraceContextEmptyTracestate(t *testing.T) {
 func TestGenerateTraceContext(t *testing.T) {
 	vendorName := "vendor"
 	vendorValue := "value"
-	tc, err := GenerateTraceContext("", &TraceStateMember{Key: vendorName, Value: vendorValue}, true)
+	tc, err := GenerateTraceContext("", &TraceStateMember{Key: vendorName, Value: vendorValue}, SamplingBehaviorAlwaysSampled)
 
 	if err != nil {
 		t.Error("Failed to generate trace context")
@@ -68,16 +68,19 @@ func TestGenerateTraceContext(t *testing.T) {
 		if tc.TraceState.Members[0].Value != vendorValue {
 			t.Error("Vendor value not set right")
 		}
+		if tc.TraceParent.IsSampled() != true {
+			t.Error("Sampling flag not set right")
+		}
 	}
 }
 
 func TestHandleTraceContext(t *testing.T) {
 	// Vendors MUST accept empty tracestate headers
 	headers := http.Header{}
-	headers.Add(TraceParentHeader, "00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-00")
+	headers.Add(TraceParentHeader, "00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01")
 	headers.Add(TraceStateHeader, "vendor1=val1")
 
-	newHeaders, tc, err := HandleTraceContext(&headers, "", &TraceStateMember{Key: "vendor2", Value: "val2"}, true)
+	newHeaders, tc, err := HandleTraceContext(&headers, "", &TraceStateMember{Key: "vendor2", Value: "val2"}, SamplingBehaviorNeverSampled)
 
 	if err != nil {
 		t.Error("Failed to handle trace context")
@@ -89,8 +92,8 @@ func TestHandleTraceContext(t *testing.T) {
 		if len(tc.TraceState.Members) != 2 {
 			t.Error("TraceState list is not as long as expected")
 		}
-		if !tc.TraceParent.IsSampled() {
-			t.Error("Trace is not sampled")
+		if tc.TraceParent.IsSampled() {
+			t.Error("Trace not sampled")
 		}
 	}
 	if newHeaders.Get(TraceStateHeader) != "vendor2=val2,vendor1=val1" {
@@ -105,7 +108,7 @@ func TestHandleTraceContextMissingHeaders(t *testing.T) {
 	// Vendors MUST accept empty tracestate headers
 	headers := http.Header{}
 
-	newHeaders, tc, err := HandleTraceContext(&headers, "", &TraceStateMember{Key: "vendor2", Value: "val2"}, true)
+	newHeaders, tc, err := HandleTraceContext(&headers, "", &TraceStateMember{Key: "vendor2", Value: "val2"}, SamplingBehaviorAlwaysSampled)
 
 	if err != nil {
 		t.Error("Failed to handle trace context")
@@ -135,7 +138,7 @@ func TestHandleTraceContextHigherVersion(t *testing.T) {
 	headers.Add(TraceParentHeader, "01-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01")
 	headers.Add(TraceStateHeader, "vendor1=val1")
 
-	newHeaders, tc, err := HandleTraceContext(&headers, "", nil, true)
+	newHeaders, tc, err := HandleTraceContext(&headers, "", nil, SamplingBehaviorPassThrough)
 
 	if err != nil {
 		t.Error("Failed to handle trace context")
@@ -165,7 +168,7 @@ func TestHandleTraceContextParsingError(t *testing.T) {
 	headers.Add(TraceParentHeader, "01-illegal")
 	headers.Add(TraceStateHeader, "vendor1=val1")
 
-	newHeaders, tc, err := HandleTraceContext(&headers, "", nil, true)
+	newHeaders, tc, err := HandleTraceContext(&headers, "", nil, SamplingBehaviorAlwaysSampled)
 
 	if err != nil {
 		t.Error("Failed to handle trace context")

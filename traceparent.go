@@ -7,9 +7,20 @@ import (
 	"regexp"
 )
 
+type SamplingBehavior uint8
+
 const (
 	FlagSampled                         uint8 = 1
 	HighestSupportedTraceContextVersion uint8 = 0
+
+	// SamplingBehaviorPassThrough leads to sampling decisions from the calling
+	// system to be passed through. If new traces are generated, their sampling
+	// flag will not be set.
+	SamplingBehaviorPassThrough SamplingBehavior = 0
+	// SamplingBehaviorAlwaysSampled always overrides the sampling flag to true
+	SamplingBehaviorAlwaysSampled SamplingBehavior = 1
+	// SamplingBehaviorNeverSampled always overrides the sampling flag to false
+	SamplingBehaviorNeverSampled SamplingBehavior = 2
 )
 
 var (
@@ -212,4 +223,19 @@ func (tp *TraceParent) String() string {
 		tp.traceId,
 		tp.parentId,
 		tp.flags)
+}
+
+// applySamplingBehavior applies the selected sampling behavior to the TraceParent
+func (tp *TraceParent) applySamplingBehavior(sampling SamplingBehavior) error {
+	switch sampling {
+	case SamplingBehaviorPassThrough:
+		// Nothing to do to retain the previous value
+	case SamplingBehaviorAlwaysSampled:
+		tp.SetSampled(true)
+	case SamplingBehaviorNeverSampled:
+		tp.SetSampled(false)
+	default:
+		return errors.New("invalid sampling behavior")
+	}
+	return nil
 }
