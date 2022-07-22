@@ -4,8 +4,6 @@ import (
 	"errors"
 	"regexp"
 	"strings"
-
-	"golang.org/x/exp/slices"
 )
 
 var (
@@ -71,8 +69,14 @@ func (ts *TraceState) Mutate(member TraceStateMember) error {
 	if !valuePattern.MatchString(member.Value) {
 		return errors.New("value doesn't match allowed value pattern")
 	}
-	idx := slices.IndexFunc(ts.Members,
-		func(m *TraceStateMember) bool { return m.Key == member.Key })
+
+	idx := -1
+	for i := range ts.Members {
+		if ts.Members[i].Key == member.Key {
+			idx = i
+			break
+		}
+	}
 
 	// If the member already exists in the list, the old entry needs to be
 	// removed first
