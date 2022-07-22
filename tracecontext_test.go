@@ -208,3 +208,21 @@ func TestWriteHeadersNoEmptyTraceState(t *testing.T) {
 		t.Error("tracestate header written")
 	}
 }
+
+func TestNewTraceContext(t *testing.T) {
+	traceId := "0af7651916cd43dd8448eb211c80319c"
+	parentId := "00f067aa0ba902b7"
+	tc, err := NewTraceContext(traceId, parentId)
+
+	if err != nil {
+		t.Error("Unexpected error: ", err)
+	}
+
+	if len(tc.TraceState.Members) != 0 {
+		t.Error("Generated tracestate is not empty")
+	}
+
+	if tc.TraceParent.parentId != parentId || tc.TraceParent.traceId != traceId {
+		t.Error("traceId or parentId not matching")
+	}
+}
