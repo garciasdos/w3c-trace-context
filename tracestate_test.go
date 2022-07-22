@@ -67,6 +67,38 @@ func TestMutateReplace(t *testing.T) {
 	}
 }
 
+func TestMutateReplaceNotLast(t *testing.T) {
+	member1 := TraceStateMember{
+		Key:   "member1",
+		Value: "value1",
+	}
+	member2 := TraceStateMember{
+		Key:   "member2",
+		Value: "value2",
+	}
+	member3 := TraceStateMember{
+		Key:   "member3",
+		Value: "value3",
+	}
+	ts := TraceState{
+		Members: []*TraceStateMember{
+			&member1,
+			&member2,
+			&member3,
+		},
+	}
+
+	member2new := TraceStateMember{Key: "member2", Value: "newVal"}
+	ts.Mutate(member2new)
+
+	if len(ts.Members) != 3 {
+		t.Errorf("Incorrect length %d after mutate", len(ts.Members))
+	}
+	if ts.Members[0].Value != member2new.Value || ts.Members[0].Key != member2new.Key {
+		t.Error("Key or value of new member are not correct")
+	}
+}
+
 func TestMutateIllegalKey(t *testing.T) {
 	member1 := TraceStateMember{
 		Key:   "member1",
