@@ -27,7 +27,7 @@ func main() {
         Key: "myKey",
         Value: "myValue",
     }
-    newHeaders, tc, err := HandleTraceContext(&headers, parentId, &member, false)
+    newHeaders, tc, err := HandleTraceContext(&headers, parentId, &member, SamplingBehaviorPassThrough)
 
     // pass newHeaders to next systems
 }
