@@ -1,3 +1,3 @@
-module github.com/dschanoeh/w3c-trace-context
+module github.com/garciasdos/w3c-trace-context
 
-go 1.17
+go 1.21
