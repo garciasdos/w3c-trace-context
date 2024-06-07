@@ -2,6 +2,7 @@ package tracecontext
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 )
 
@@ -85,6 +86,56 @@ func HandleTraceContext(headers *http.Header, parentId string, member *TraceStat
 
 	newTraceContext.WriteHeaders(&newHeaders)
 	return &newHeaders, newTraceContext, nil
+}
+
+func HandleKongTraceContext(headers map[string][]string, parentId string, member *TraceStateMember, sampling SamplingBehavior) (*http.Header, *TraceContext, error) {
+	httpHeaders := convertToHTTPHeader(headers)
+	var newTraceContext *TraceContext
+
+	if traceParent, exists := headers[TraceParentHeader]; exists && len(traceParent) > 0 {
+		fmt.Println("Existing traceparent header found:", traceParent[0])
+		tc, err := ParseTraceContext(httpHeaders)
+		if err != nil {
+			// If parsing fails, the vendor creates a new traceparent header and
+			// deletes the tracestate
+			httpHeaders.Del(TraceStateHeader)
+			tc, err := GenerateTraceContext(parentId, member, sampling)
+			if err != nil {
+				return nil, nil, err
+			}
+			newTraceContext = tc
+		} else {
+			newTraceContext = tc
+			newTraceContext.Mutate(parentId, sampling, member)
+		}
+	} else {
+		// If a tracestate header is received without an accompanying
+		// traceparent header, it is invalid and MUST be discarded.
+		fmt.Println("No traceparent header found, creating a new trace context")
+		httpHeaders.Del(TraceStateHeader)
+		tc, err := GenerateTraceContext(parentId, member, sampling)
+		if err != nil {
+			return nil, nil, err
+		}
+		newTraceContext = tc
+	}
+
+	newTraceContext.WriteHeaders(&httpHeaders)
+
+	fmt.Println("New traceparent header:", httpHeaders.Get(TraceParentHeader))
+	fmt.Println("New tracestate header:", httpHeaders.Get(TraceStateHeader))
+
+	return &httpHeaders, newTraceContext, nil
+}
+
+func convertToHTTPHeader(headers map[string][]string) http.Header {
+	httpHeaders := http.Header{}
+	for key, values := range headers {
+		for _, value := range values {
+			httpHeaders.Add(key, value)
+		}
+	}
+	return httpHeaders
 }
 
 // GenerateTraceContext generates a new TraceContext object with a random

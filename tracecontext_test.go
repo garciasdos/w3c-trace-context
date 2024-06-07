@@ -186,6 +186,68 @@ func TestHandleTraceContextParsingError(t *testing.T) {
 	}
 }
 
+func TestHandleKongTraceContext(t *testing.T) {
+	headers := map[string][]string{
+		TraceParentHeader: {"00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01"},
+		TraceStateHeader:  {"vendor1=val1"},
+	}
+
+	parentId := "00f067aa0ba902b7"
+	member := &TraceStateMember{Key: "vendor2", Value: "val2"}
+	sampling := SamplingBehaviorAlwaysSampled
+
+	newHeaders, newTraceContext, err := HandleKongTraceContext(headers, parentId, member, sampling)
+	if err != nil {
+		t.Error("Failed to handle trace context:", err)
+	}
+
+	if newTraceContext == nil {
+		t.Error("No trace context returned")
+	} else {
+		if !newTraceContext.TraceParent.IsSampled() {
+			t.Error("Trace is not sampled")
+		}
+	}
+
+	if newTraceState := newHeaders.Get(TraceStateHeader); newTraceState != "vendor2=val2,vendor1=val1" {
+		t.Errorf("TraceState is not as expected: got %v", newTraceState)
+	}
+
+	if newTraceParent := newHeaders.Get(TraceParentHeader); newTraceParent != "00-0af7651916cd43dd8448eb211c80319c-00f067aa0ba902b7-01" {
+		t.Errorf("Missing traceparent header: got %v", newTraceParent)
+	}
+}
+
+func TestHandleKongTraceContextParsingError(t *testing.T) {
+	headers := map[string][]string{
+		TraceParentHeader: {"01-illegal"},
+		TraceStateHeader:  {"vendor1=val1"},
+	}
+	parentId := "00f067aa0ba902b7"
+	member := &TraceStateMember{Key: "vendor2", Value: "val2"}
+	sampling := SamplingBehaviorAlwaysSampled
+
+	newHeaders, newTraceContext, err := HandleKongTraceContext(headers, parentId, member, sampling)
+	if err != nil {
+		t.Error("Failed to handle trace context:", err)
+	}
+
+	if newTraceContext == nil {
+		t.Error("No trace context returned")
+	} else {
+		if !newTraceContext.TraceParent.IsSampled() {
+			t.Error("Trace is not sampled")
+		}
+	}
+
+	if newTraceState := newHeaders.Get(TraceStateHeader); newTraceState != "vendor2=val2" {
+		t.Errorf("TraceState header returned: got %v", newTraceState)
+	}
+	if newTraceParent := newHeaders.Get(TraceParentHeader); newTraceParent == "" {
+		t.Errorf("Missing traceparent header: got %v", newTraceParent)
+	}
+}
+
 func TestWriteHeadersEmpty(t *testing.T) {
 	headers := http.Header{}
 	tc := TraceContext{}
