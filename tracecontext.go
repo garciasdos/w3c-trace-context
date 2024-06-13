@@ -93,7 +93,6 @@ func HandleKongTraceContext(headers map[string][]string, parentId string, member
 	var newTraceContext *TraceContext
 
 	if traceParent, exists := headers[TraceParentHeader]; exists && len(traceParent) > 0 {
-		fmt.Println("Existing traceparent header found:", traceParent[0])
 		tc, err := ParseTraceContext(httpHeaders)
 		if err != nil {
 			// If parsing fails, the vendor creates a new traceparent header and
@@ -111,7 +110,7 @@ func HandleKongTraceContext(headers map[string][]string, parentId string, member
 	} else {
 		// If a tracestate header is received without an accompanying
 		// traceparent header, it is invalid and MUST be discarded.
-		fmt.Println("No traceparent header found, creating a new trace context")
+
 		httpHeaders.Del(TraceStateHeader)
 		tc, err := GenerateTraceContext(parentId, member, sampling)
 		if err != nil {
@@ -121,9 +120,6 @@ func HandleKongTraceContext(headers map[string][]string, parentId string, member
 	}
 
 	newTraceContext.WriteHeaders(&httpHeaders)
-
-	fmt.Println("New traceparent header:", httpHeaders.Get(TraceParentHeader))
-	fmt.Println("New tracestate header:", httpHeaders.Get(TraceStateHeader))
 
 	return &httpHeaders, newTraceContext, nil
 }
