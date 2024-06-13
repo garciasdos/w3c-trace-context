@@ -2,7 +2,6 @@ package tracecontext
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 )
 
